@@ -1,14 +1,39 @@
-"use severe";
+"use server"
 
-export const signupCredentials = async(formdata: FormData) => {
-    const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        body: formdata
-    });
+import { RegisterSchema } from "@/actions/zod";
+import { prisma } from "@/lib/prisma";
+import { hashSync } from "bcrypt-ts";
+import { redirect } from "next/navigation";
 
-    if (!response.ok) {
-        throw new Error('Signup failed');
-    }
+// signupCredentials is a function that takes a FormData object and returns a promise that resolves to an object.
+export const signupCredentials = async (
+    prevState: unknown,
+    formData: FormData) => {
+	const validatedFields = RegisterSchema.safeParse(
+		Object.fromEntries(formData.entries())
+	);
 
-    return response.json();
-}
+	if (!validatedFields.success) {
+		return {
+			error: validatedFields.error.flatten().fieldErrors,
+		};
+	}
+
+	const { name, email, password } = validatedFields.data;
+	const hashedPassword = hashSync(password, 10);
+
+	try {
+		await prisma.user.create({
+			data: {
+				name,
+				email,
+				password: hashedPassword,
+			},
+		});
+	} catch {
+		return {
+			message: "An error occurred while creating your account",
+		};
+	}
+	redirect("/login");
+};
