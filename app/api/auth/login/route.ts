@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { compare } from "bcrypt-ts";
-import { getUserByEmail } from "@/app/api/common/user";
+import { getUserByEmailWithPassword } from "@/app/api/common/user";
+import { Prisma } from "@prisma/client";
 
 const loginSchema = z.object({
 	email: z.string().email("Invalid email"),
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
 		const { email, password } = loginSchema.parse(body);
 
 		// Find user by email and ensure password exists
-		const user = await getUserByEmail(email);
+		const user = await getUserByEmailWithPassword(email);
 		if (!user?.password) {
 			return NextResponse.json(
 				{ error: "Invalid email or password" },
@@ -42,8 +43,17 @@ export async function POST(request: Request) {
 			},
 		});
 	} catch (error) {
+		console.error("[Registration Error]:", error);
 		if (error instanceof z.ZodError) {
 			return NextResponse.json({ error: error.issues }, { status: 400 });
+		}
+
+		if (error instanceof Prisma.PrismaClientKnownRequestError) {
+			// Handle specific Prisma errors
+			return NextResponse.json(
+				{ error: "Registration failed" },
+				{ status: 400 }
+			);
 		}
 
 		return NextResponse.json(

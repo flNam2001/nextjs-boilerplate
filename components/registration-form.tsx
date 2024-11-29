@@ -26,7 +26,7 @@ import { useState } from "react";
 const formSchema = z
 	.object({
 		name: z.string().min(3, {
-			message: "Name must be at least 2 characters.",
+			message: "Name must be at least 3 characters.",
 		}),
 		email: z.string().email({
 			message: "Please enter a valid email address.",
@@ -72,7 +72,7 @@ export default function RegisterForm() {
 			// Redirect to login page
 			router.push("/login");
 		} catch {
-			setError("An error occurred during login");
+			setError("An error occurred during registration");
 		}
 	}
 
