@@ -20,11 +20,16 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 const formSchema = z
 	.object({
-		name: z.string().min(2, {
-			message: "Name must be at least 2 characters.",
+		name: z.string().min(3, {
+			message: "Name must be at least 3 characters.",
+		}),
+		email: z.string().email({
+			message: "Please enter a valid email address.",
 		}),
 		password: z.string().min(8, {
 			message: "Password must be at least 8 characters.",
@@ -36,7 +41,20 @@ const formSchema = z
 		path: ["confirmPassword"],
 	});
 
-export default function RegistrationForm() {
+interface ErrorResponse {
+	error?: string;
+}
+
+function getErrorMessage(response: Response, data: ErrorResponse) {
+	if (data.error) return data.error;
+	if (response.status === 409) return "Email already exists";
+	if (response.status === 400) return "Invalid input data";
+	return "Registration failed. Please try again later";
+}
+
+export default function RegisterForm() {
+	const router = useRouter();
+	const [error, setError] = useState<string>("");
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -46,81 +64,118 @@ export default function RegistrationForm() {
 		},
 	});
 
-	function onSubmit(values: z.infer<typeof formSchema>) {
+	async function onSubmit(values: z.infer<typeof formSchema>) {
 		console.log(values);
-		// Here you would typically send the data to your server
+		try {
+			const response = await fetch(process.env.NEXT_PUBLIC_API_URL + "/auth/register", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(values),
+			});
+
+			const data = await response.json();
+
+			if (!response.ok) {
+				setError(getErrorMessage(response, data));
+				return;
+			}
+
+			router.push("/login");
+		} catch {
+			setError("An error occurred during registration");
+		}
 	}
 
 	return (
-		<div className="flex items-center justify-center min-h-screen bg-gray-100">
-			<Card className="w-[350px]">
-				<CardHeader>
-					<CardTitle>Register</CardTitle>
-					<CardDescription>Create a new account</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<Form {...form}>
-						<form
-							onSubmit={form.handleSubmit(onSubmit)}
-							className="space-y-8"
-						>
-							<FormField
-								control={form.control}
-								name="name"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Name</FormLabel>
-										<FormControl>
-											<Input
-												placeholder="John Doe"
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								control={form.control}
-								name="password"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Password</FormLabel>
-										<FormControl>
-											<Input
-												type="password"
-												placeholder="********"
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								control={form.control}
-								name="confirmPassword"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Confirm Password</FormLabel>
-										<FormControl>
-											<Input
-												type="password"
-												placeholder="********"
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<Button type="submit" className="w-full">
-								Register
-							</Button>
-						</form>
-					</Form>
-				</CardContent>
-			</Card>
-		</div>
+		<Card>
+			<CardHeader>
+				<CardTitle>Register</CardTitle>
+				<CardDescription>Create a new account</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<Form {...form}>
+					<form
+						onSubmit={form.handleSubmit(onSubmit)}
+						className="space-y-8"
+					>
+						<FormField
+							control={form.control}
+							name="name"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Name</FormLabel>
+									<FormControl>
+										<Input
+											placeholder="John Doe"
+											{...field}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="email"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Email</FormLabel>
+									<FormControl>
+										<Input
+											type="email"
+											placeholder="john@gmail.com"
+											{...field}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="password"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Password</FormLabel>
+									<FormControl>
+										<Input
+											type="password"
+											placeholder="********"
+											{...field}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="confirmPassword"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Confirm Password</FormLabel>
+									<FormControl>
+										<Input
+											type="password"
+											placeholder="********"
+											{...field}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						{error && (
+							<div className="text-sm text-red-500 text-center">
+								{error}
+							</div>
+						)}
+						<Button type="submit" className="w-full">
+							Register
+						</Button>
+					</form>
+				</Form>
+			</CardContent>
+		</Card>
 	);
 }
