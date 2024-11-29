@@ -41,6 +41,17 @@ const formSchema = z
 		path: ["confirmPassword"],
 	});
 
+interface ErrorResponse {
+	error?: string;
+}
+
+function getErrorMessage(response: Response, data: ErrorResponse) {
+	if (data.error) return data.error;
+	if (response.status === 409) return "Email already exists";
+	if (response.status === 400) return "Invalid input data";
+	return "Registration failed. Please try again later";
+}
+
 export default function RegisterForm() {
 	const router = useRouter();
 	const [error, setError] = useState<string>("");
@@ -56,7 +67,7 @@ export default function RegisterForm() {
 	async function onSubmit(values: z.infer<typeof formSchema>) {
 		console.log(values);
 		try {
-			const response = await fetch("/api/auth/register", {
+			const response = await fetch(process.env.NEXT_PUBLIC_API_URL + "/auth/register", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(values),
@@ -65,11 +76,10 @@ export default function RegisterForm() {
 			const data = await response.json();
 
 			if (!response.ok) {
-				setError(data.error || "Registration failed");
+				setError(getErrorMessage(response, data));
 				return;
 			}
 
-			// Redirect to login page
 			router.push("/login");
 		} catch {
 			setError("An error occurred during registration");

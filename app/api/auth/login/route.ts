@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 			},
 		});
 	} catch (error) {
-		console.error("[Registration Error]:", error);
+		console.error("[Login Error]:", error);
 		if (error instanceof z.ZodError) {
 			return NextResponse.json({ error: error.issues }, { status: 400 });
 		}
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 		if (error instanceof Prisma.PrismaClientKnownRequestError) {
 			// Handle specific Prisma errors
 			return NextResponse.json(
-				{ error: "Registration failed" },
+				{ error: "Login failed" },
 				{ status: 400 }
 			);
 		}
