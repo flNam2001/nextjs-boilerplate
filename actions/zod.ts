@@ -17,12 +17,6 @@ export const RegisterSchema = object({
 	password: string()
 		.min(6, "password can be less than 6")
 		.max(36, "password can be more than 36"),
-	confirmPassword: string()
-		.min(6, "password can be less than 6")
-		.max(36, "password can be more than 36"),
-}).refine((data) => data.password === data.confirmPassword, {
-	message: "password and passage must be the same",
-    path: ["confirmPassword"],
 });
 
 export const LoginSchema = object({
