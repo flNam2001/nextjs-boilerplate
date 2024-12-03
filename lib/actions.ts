@@ -22,7 +22,8 @@ export async function sendData<T>(
 	
 	while (attempt < MAX_RETRIES) {
 		try {
-			const response = await fetch(process.env.NEXT_PUBLIC_API_URL + url, options);
+            const apiUrl = new URL(url, process.env.NEXT_PUBLIC_API_URL);
+            const response = await fetch(apiUrl, options);
 			return response;
 		} catch (error) {
 			attempt++;
