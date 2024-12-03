@@ -1,12 +1,10 @@
 "use client"
 
 import {
-  BadgeCheck,
-  Bell,
   ChevronsUpDown,
-  CreditCard,
   LogOut,
-  Sparkles,
+  Moon,
+  Sun
 } from "lucide-react"
 
 import {
@@ -29,17 +27,27 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useTheme } from "next-themes"
+import { signOut } from "next-auth/react"
 
 export function NavUser({
   user,
 }: {
-  user: {
+  readonly user: {
     name: string
     email: string
     avatar: string
   }
 }) {
   const { isMobile } = useSidebar()
+  const { theme, setTheme } = useTheme()
+  const handleLogout = async () => {
+    await signOut()
+  }
+
+  const handleToggleTheme = () => {
+    setTheme((theme) => (theme === "light" ? "dark" : "light"))
+  }
 
   return (
     <SidebarMenu>
@@ -81,28 +89,13 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
+              <DropdownMenuItem onSelect={handleToggleTheme}>
+                {theme === "light" ? <Moon /> : <Sun />}
+                {theme === "light" ? "Dark mode" : "Light mode"}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onSelect={handleLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>
