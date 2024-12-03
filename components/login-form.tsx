@@ -49,20 +49,30 @@ export function LoginForm() {
 	});
 
 	async function onSubmit(values: z.infer<typeof formSchema>) {
+		if (isLoading) return;
+
 		try {
 			setIsLoading(true);
 			const data = await sendData("/auth/login", "POST", values);
 			const response = await data.json();
 
-			if (data.ok === false) {
-				setError(response.error);
+			if (!data.ok) {
+				if (response.error === 'invalid_credentials') {
+					setError("Invalid email or password");
+				} else {
+					setError(response.error);
+				}
 				return;
 			}
 
 			// Redirect on success
 			router.push("/dashboard"); // or wherever you want to redirect after login
-		} catch {
-			setError("An error occurred during login");
+		} catch (error) {
+			setError(
+				error instanceof Error
+					? error.message
+					: "Network error. Please try again later."
+			);
 		} finally {
 			setIsLoading(false);
 		}

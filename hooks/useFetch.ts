@@ -9,33 +9,41 @@ export function useFetch<T>(
 	const [isLoading, setIsLoading] = useState(true);
 	const [hasError, setHasError] = useState<string | null>(null);
 
-	useEffect(() => {
-		const fetchData = async () => {
-			setIsLoading(true);
-			try {
-				const options: RequestInit = {
-					method,
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: body ? JSON.stringify(body) : undefined,
-				};
+useEffect(() => {
+	const controller = new AbortController();
 
-				const response = await fetch(process.env.NEXT_PUBLIC_API_URL + url, options);
-				if (!response.ok)
-					throw new Error("Network response was not ok");
-				const result = await response.json();
-				setData(result);
-			} catch (error) {
-				const errorMessage = (error as Error).message; // Type assertion
-				setHasError(errorMessage);
-			} finally {
-				setIsLoading(false);
-			}
-		};
+	const fetchData = async () => {
+		setIsLoading(true);
+		try {
+			const options: RequestInit = {
+				method,
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: body ? JSON.stringify(body) : undefined,
+				signal: controller.signal,
+			};
 
-		fetchData();
-	}, [url, method, body]);
+			const response = await fetch(process.env.NEXT_PUBLIC_API_URL + url, options);
+			if (!response.ok)
+				throw new Error("Network response was not ok");
+			const result = await response.json();
+			setData(result);
+		} catch (error) {
+			if ((error as Error).name === 'AbortError') return;
+			const errorMessage = (error as Error).message;
+			setHasError(errorMessage);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	fetchData();
+	
+	return () => {
+		controller.abort();
+	};
+}, [url, method, body]);
 
 	return { data, isLoading, hasError };
 }

@@ -67,15 +67,14 @@ export default function RegisterForm() {
 		try {
 			setIsLoading(true);
 			const response = await sendData("/auth/register", "POST", values);
-			const data = await response.json();
-			console.log(data);
 			if (!response.ok) {
 				setError(getErrorMessage(response));
 				return;
 			}
 			router.push("/login");
-		} catch {
-			setError("An error occurred during registration");
+		} catch (error) {
+			console.error("Registration error:", error);
+			setError("An unexpected error occurred. Please try again later");
 		} finally {
 			setIsLoading(false);
 		}
@@ -174,7 +173,7 @@ export default function RegisterForm() {
 							) : (
 								<div className="flex items-center justify-center">
 									<User2 className="mr-2" />
-									<span>Login</span>
+									<span>Register</span>
 								</div>
 							)}
 						</Button>
