@@ -42,7 +42,12 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const { theme, setTheme } = useTheme()
   const handleLogout = async () => {
-    await signOut()
+    try {
+      await signOut()
+    } catch (error) {
+      console.error('Failed to sign out:', error)
+      // Consider adding user feedback here
+    }
   }
 
   const handleToggleTheme = () => {
