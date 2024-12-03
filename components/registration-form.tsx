@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/form";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { sendData } from "@/lib/actions";
+import { Loader2, User2 } from "lucide-react";
 
 const formSchema = z
 	.object({
@@ -41,12 +43,7 @@ const formSchema = z
 		path: ["confirmPassword"],
 	});
 
-interface ErrorResponse {
-	error?: string;
-}
-
-function getErrorMessage(response: Response, data: ErrorResponse) {
-	if (data.error) return data.error;
+function getErrorMessage(response: Response) {
 	if (response.status === 409) return "Email already exists";
 	if (response.status === 400) return "Invalid input data";
 	return "Registration failed. Please try again later";
@@ -54,6 +51,7 @@ function getErrorMessage(response: Response, data: ErrorResponse) {
 
 export default function RegisterForm() {
 	const router = useRouter();
+	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string>("");
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -67,22 +65,19 @@ export default function RegisterForm() {
 	async function onSubmit(values: z.infer<typeof formSchema>) {
 		console.log(values);
 		try {
-			const response = await fetch(process.env.NEXT_PUBLIC_API_URL + "/auth/register", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(values),
-			});
-
+			setIsLoading(true);
+			const response = await sendData("/auth/register", "POST", values);
 			const data = await response.json();
-
+			console.log(data);
 			if (!response.ok) {
-				setError(getErrorMessage(response, data));
+				setError(getErrorMessage(response));
 				return;
 			}
-
 			router.push("/login");
 		} catch {
 			setError("An error occurred during registration");
+		} finally {
+			setIsLoading(false);
 		}
 	}
 
@@ -171,7 +166,17 @@ export default function RegisterForm() {
 							</div>
 						)}
 						<Button type="submit" className="w-full">
-							Register
+							{isLoading ? (
+								<div className="flex items-center justify-center">
+									<Loader2 className="mr-2 animate-spin" />{" "}
+									<span>Loading...</span>
+								</div>
+							) : (
+								<div className="flex items-center justify-center">
+									<User2 className="mr-2" />
+									<span>Login</span>
+								</div>
+							)}
 						</Button>
 					</form>
 				</Form>

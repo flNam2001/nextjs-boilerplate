@@ -24,6 +24,8 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { sendData } from "@/lib/actions";
+import { Loader2, LogInIcon } from "lucide-react";
 
 const formSchema = z.object({
 	email: z.string().email({
@@ -37,6 +39,7 @@ const formSchema = z.object({
 export function LoginForm() {
 	const router = useRouter();
 	const [error, setError] = useState<string>("");
+	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -47,16 +50,12 @@ export function LoginForm() {
 
 	async function onSubmit(values: z.infer<typeof formSchema>) {
 		try {
-			const response = await fetch("/api/auth/login", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(values),
-			});
+			setIsLoading(true);
+			const data = await sendData("/auth/login", "POST", values);
+			const response = await data.json();
 
-			const data = await response.json();
-
-			if (!response.ok) {
-				setError(data.error || "Login failed");
+			if (data.ok === false) {
+				setError(response.error);
 				return;
 			}
 
@@ -64,6 +63,8 @@ export function LoginForm() {
 			router.push("/dashboard"); // or wherever you want to redirect after login
 		} catch {
 			setError("An error occurred during login");
+		} finally {
+			setIsLoading(false);
 		}
 	}
 
@@ -121,7 +122,17 @@ export function LoginForm() {
 							</div>
 						)}
 						<Button type="submit" className="w-full">
-							Login
+							{isLoading ? (
+								<div className="flex items-center justify-center">
+									<Loader2 className="mr-2 animate-spin" />{" "}
+									<span>Loading...</span>
+								</div>
+							) : (
+								<div className="flex items-center justify-center">
+									<LogInIcon className="mr-2" />
+									<span>Login</span>
+								</div>
+							)}
 						</Button>
 					</form>
 				</Form>
@@ -130,7 +141,7 @@ export function LoginForm() {
 				<p className="text-sm text-gray-600">
 					Don&apos;t have an account?{" "}
 					<Link
-						href="/auth/register"
+						href="/register"
 						className="text-blue-600 hover:underline"
 					>
 						Register here
